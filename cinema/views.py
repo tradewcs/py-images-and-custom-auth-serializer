@@ -124,15 +124,6 @@ class MovieViewSet(
 
         return MovieSerializer
 
-    def retrieve(self, request, *args, **kwargs):
-        """Return detailed view for a movie ensuring image is included."""
-        movie = self.get_object()
-        serializer = MovieDetailSerializer(movie, context={"request": request})
-        data = serializer.data
-        # Guarantee the image key is present (None if no image)
-        data["image"] = movie.image.url if movie.image else None
-        return Response(data)
-
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
