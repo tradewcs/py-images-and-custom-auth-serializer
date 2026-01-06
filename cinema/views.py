@@ -6,6 +6,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -15,6 +17,7 @@ from cinema.serializers import (
     ActorSerializer,
     CinemaHallSerializer,
     MovieSerializer,
+    MovieImageSerializer,
     MovieSessionSerializer,
     MovieSessionListSerializer,
     MovieDetailSerializer,
@@ -73,6 +76,24 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @action(
+        methods=["post"],
+        detail=True,
+        url_path="upload-image",
+        url_name="upload-image"
+    )
+    def upload_image(self, request, pk=None):
+        movie = self.get_object()
+        serializer = MovieImageSerializer(
+            movie, data=request.data, partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
@@ -102,6 +123,15 @@ class MovieViewSet(
             return MovieDetailSerializer
 
         return MovieSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        """Return detailed view for a movie ensuring image is included."""
+        movie = self.get_object()
+        serializer = MovieDetailSerializer(movie, context={"request": request})
+        data = serializer.data
+        # Guarantee the image key is present (None if no image)
+        data["image"] = movie.image.url if movie.image else None
+        return Response(data)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
