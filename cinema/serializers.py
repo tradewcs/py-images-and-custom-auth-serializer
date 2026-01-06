@@ -61,7 +61,6 @@ class MovieSerializer(serializers.ModelSerializer):
 class MovieDetailSerializer(MovieSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     actors = ActorSerializer(many=True, read_only=True)
-    image = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Movie
